@@ -16,13 +16,14 @@ def dense_search(client: QdrantClient, query: str, top_k: int = 5) -> list[Score
     model = TextEmbedding(model_name=DENSE_MODEL)
     query_vec = list(model.embed([query]))[0].tolist()
 
-    results = client.search(
+    results = client.query_points(
         collection_name=COLLECTION_NAME,
-        query_vector=("dense", query_vec),
+        query=query_vec,
+        using="dense",
         limit=top_k,
         with_payload=True,
     )
-    return results
+    return results.points
 
 
 def print_results(results: list[ScoredPoint], label: str = "Dense-Only") -> None:
@@ -31,7 +32,8 @@ def print_results(results: list[ScoredPoint], label: str = "Dense-Only") -> None
     print(f"{'=' * 50}")
     for i, r in enumerate(results, 1):
         name = r.payload.get("name", "?")
-        print(f"  {i}. [{r.score:.3f}]  {name}")
+        sku = r.payload.get("sku", "?")
+        print(f"  {i}. [{r.score:.3f}]  id={r.id} sku={sku}  {name}")
 
 
 if __name__ == "__main__":

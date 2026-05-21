@@ -2,6 +2,8 @@
 Hybrid search: dense + sparse (BM25) via Qdrant prefetch API with RRF fusion.
 Single network request. Both searches run in parallel on the server.
 """
+import argparse
+import json
 import sys
 sys.path.append("..")
 
@@ -42,6 +44,35 @@ class HybridSearcher:
         )
         return dense_vec, sparse_vec
 
+    def build_query_request(
+        self,
+        query: str,
+        top_k: int = 5,
+        category: str | None = None,
+    ) -> dict:
+        dense_vec, sparse_vec = self._embed(query)
+        request: dict = {
+            "prefetch": [
+                {"query": dense_vec, "using": "dense", "limit": PREFETCH_LIMIT},
+                {
+                    "query": {
+                        "indices": sparse_vec.indices,
+                        "values": sparse_vec.values,
+                    },
+                    "using": "sparse",
+                    "limit": PREFETCH_LIMIT,
+                },
+            ],
+            "query": {"fusion": "rrf"},
+            "limit": top_k,
+            "with_payload": True,
+        }
+        if category:
+            request["filter"] = {
+                "must": [{"key": "category", "match": {"value": category}}]
+            }
+        return request
+
     def search(
         self,
         query: str,
@@ -63,7 +94,7 @@ class HybridSearcher:
                 Prefetch(query=sparse_vec, using="sparse", limit=PREFETCH_LIMIT),
             ],
             query=FusionQuery(fusion=Fusion.RRF),
-            filter=qdrant_filter,
+            query_filter=qdrant_filter,
             limit=top_k,
             with_payload=True,
         )
@@ -76,14 +107,52 @@ def print_results(results: list[ScoredPoint], label: str = "Hybrid (RRF)") -> No
     print(f"{'=' * 50}")
     for i, r in enumerate(results, 1):
         name = r.payload.get("name", "?")
-        print(f"  {i}. [{r.score:.3f}]  {name}")
+        sku = r.payload.get("sku", "?")
+        print(f"  {i}. [{r.score:.3f}]  id={r.id} sku={sku}  {name}")
 
 
 if __name__ == "__main__":
-    query = "iPhone 15 Pro Max 256GB"
-    print(f"Query: '{query}'")
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--query",
+        default="iPhone 15 Pro Max 256GB",
+        help="Query text.",
+    )
+    parser.add_argument(
+        "--top-k",
+        type=int,
+        default=5,
+        help="Number of final fused results.",
+    )
+    parser.add_argument(
+        "--category",
+        default=None,
+        help="Optional category filter.",
+    )
+    parser.add_argument(
+        "--show-request",
+        action="store_true",
+        help="Print query payload for Qdrant dashboard/API explorer demo.",
+    )
+    args = parser.parse_args()
+
+    print(f"Query: '{args.query}'")
 
     client = QdrantClient(url=QDRANT_URL)
     searcher = HybridSearcher(client)
-    results = searcher.search(query)
+    if args.show_request:
+        request = searcher.build_query_request(
+            query=args.query,
+            top_k=args.top_k,
+            category=args.category,
+        )
+        print("\nPOST /collections/products/points/query payload:")
+        print(json.dumps(request, indent=2))
+        print("\nDashboard: http://localhost:6333/dashboard")
+
+    results = searcher.search(
+        query=args.query,
+        top_k=args.top_k,
+        category=args.category,
+    )
     print_results(results)

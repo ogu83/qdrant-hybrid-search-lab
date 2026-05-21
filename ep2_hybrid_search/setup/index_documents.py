@@ -2,6 +2,7 @@
 Index 500 product records into Qdrant with dense + sparse vectors.
 Run after create_collection.py.
 """
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -31,7 +32,15 @@ def build_text(product: dict) -> str:
     return f"{product['name']} {product['description']}"
 
 
-def index_products(client: QdrantClient) -> None:
+def _print_sparse_preview(text: str, indices: list[int], values: list[float]) -> None:
+    print("\nSparse vector preview")
+    print(f"Text: {text[:120]}...")
+    print(f"Non-zero terms: {len(indices)}")
+    print(f"indices[:12]: {indices[:12]}")
+    print(f"values[:12]:  {[round(v, 4) for v in values[:12]]}")
+
+
+def index_products(client: QdrantClient, preview_sparse: bool = False) -> None:
     print("Loading embedding models...")
     dense_model = TextEmbedding(model_name=DENSE_MODEL)
     sparse_model = SparseTextEmbedding(model_name=SPARSE_MODEL)
@@ -51,6 +60,8 @@ def index_products(client: QdrantClient) -> None:
             indices=sparse_result.indices.tolist(),
             values=sparse_result.values.tolist(),
         )
+        if preview_sparse and i == 0:
+            _print_sparse_preview(text, sparse_vec.indices, sparse_vec.values)
 
         points.append(
             PointStruct(
@@ -72,5 +83,13 @@ def index_products(client: QdrantClient) -> None:
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--preview-sparse",
+        action="store_true",
+        help="Print sparse vector indices/values for the first indexed product.",
+    )
+    args = parser.parse_args()
+
     client = QdrantClient(url=QDRANT_URL)
-    index_products(client)
+    index_products(client, preview_sparse=args.preview_sparse)

@@ -36,6 +36,24 @@ python hybrid.py
 python comparison.py
 ```
 
+## Slide-Ready Demo Commands
+
+```bash
+# Slide 4/5: show sparse vector indices/values while indexing
+cd ../setup
+python index_documents.py --preview-sparse
+
+# Slide 6: print exact prefetch request payload for dashboard/API explorer
+cd ../search
+python hybrid.py --show-request
+
+# Slide 7: filtered hybrid search demo (category-aware)
+python hybrid.py --query "noise cancelling wireless headphones" --category headphones --top-k 5
+```
+
+Use the printed JSON from `--show-request` with Qdrant endpoint:
+`POST /collections/products/points/query` in `http://localhost:6333/dashboard`.
+
 ## Expected Benchmark Output
 
 ```

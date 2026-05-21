@@ -1,41 +1,46 @@
 """
 Side-by-side benchmark: dense-only vs hybrid on 10 SKU-style test queries.
 Measures precision@1 and precision@5 for each strategy.
-
-Ground truth: correct_id is the product id that should appear at rank 1.
 """
+import argparse
+import json
 import sys
+from pathlib import Path
 sys.path.append("..")
 
-from fastembed import TextEmbedding
 from qdrant_client import QdrantClient
 
-from config import COLLECTION_NAME, DENSE_MODEL, QDRANT_URL
+from config import QDRANT_URL
 from search.dense_only import dense_search
 from search.hybrid import HybridSearcher
 
 TEST_QUERIES = [
-    {"query": "iPhone 15 Pro Max 256GB",    "correct_name": "iPhone 15 Pro Max 256GB"},
-    {"query": "Samsung Galaxy S24 Ultra 512GB", "correct_name": "Samsung Galaxy S24 Ultra 512GB"},
-    {"query": "MacBook Pro 14 M3 Pro 18GB RAM", "correct_name": "MacBook Pro 14-inch M3 Pro 18GB"},
-    {"query": "AirPods Pro 2nd generation USB-C", "correct_name": "AirPods Pro (2nd Gen) USB-C"},
-    {"query": "Sony WH-1000XM5 noise cancelling headphones", "correct_name": "Sony WH-1000XM5"},
-    {"query": "iPad Air 11 M2 256GB WiFi",   "correct_name": "iPad Air 11-inch M2 256GB Wi-Fi"},
-    {"query": "Samsung 990 Pro NVMe SSD 2TB", "correct_name": "Samsung 990 Pro 2TB NVMe SSD"},
-    {"query": "LG C4 OLED 65 inch 4K TV",    "correct_name": "LG C4 65-inch OLED 4K TV"},
-    {"query": "Logitech MX Master 3S mouse",  "correct_name": "Logitech MX Master 3S"},
-    {"query": "Apple Watch Series 10 45mm GPS", "correct_name": "Apple Watch Series 10 45mm GPS"},
+    {"query": "LAP-0000", "correct_sku": "LAP-0000"},
+    {"query": "HEA-0010", "correct_sku": "HEA-0010"},
+    {"query": "STO-0005", "correct_sku": "STO-0005"},
+    {"query": "TV-0013", "correct_sku": "TV-0013"},
+    {"query": "TAB-0014", "correct_sku": "TAB-0014"},
+    {"query": "PER-0021", "correct_sku": "PER-0021"},
+    {"query": "SMA-0016", "correct_sku": "SMA-0016"},
+    {"query": "LAP-0029", "correct_sku": "LAP-0029"},
+    {"query": "TAB-0022", "correct_sku": "TAB-0022"},
+    {"query": "SMA-0028", "correct_sku": "SMA-0028"},
 ]
 
 
-def precision_at_k(results, correct_name: str, k: int) -> bool:
-    top_k_names = [r.payload.get("name", "") for r in results[:k]]
-    return any(correct_name.lower() in name.lower() for name in top_k_names)
+def _load_sku_to_id() -> dict[str, int]:
+    data_path = Path(__file__).parent.parent / "data" / "sample_products.json"
+    products = json.loads(data_path.read_text(encoding="utf-8"))
+    return {str(p["sku"]): int(p["id"]) for p in products}
+
+
+def precision_at_k(results, correct_id: int, k: int) -> bool:
+    return any(int(r.id) == correct_id for r in results[:k])
 
 
 def run_benchmark(client: QdrantClient) -> None:
-    dense_model = TextEmbedding(model_name=DENSE_MODEL)
     hybrid_searcher = HybridSearcher(client)
+    sku_to_id = _load_sku_to_id()
 
     dense_p1 = dense_p5 = hybrid_p1 = hybrid_p5 = 0
 
@@ -44,15 +49,16 @@ def run_benchmark(client: QdrantClient) -> None:
 
     for item in TEST_QUERIES:
         query = item["query"]
-        correct = item["correct_name"]
+        correct_sku = item["correct_sku"]
+        correct_id = sku_to_id[correct_sku]
 
         dense_results = dense_search(client, query, top_k=5)
         hybrid_results = hybrid_searcher.search(query, top_k=5)
 
-        dp1 = precision_at_k(dense_results, correct, 1)
-        dp5 = precision_at_k(dense_results, correct, 5)
-        hp1 = precision_at_k(hybrid_results, correct, 1)
-        hp5 = precision_at_k(hybrid_results, correct, 5)
+        dp1 = precision_at_k(dense_results, correct_id, 1)
+        dp5 = precision_at_k(dense_results, correct_id, 5)
+        hp1 = precision_at_k(hybrid_results, correct_id, 1)
+        hp5 = precision_at_k(hybrid_results, correct_id, 5)
 
         dense_p1  += dp1
         dense_p5  += dp5
@@ -69,5 +75,12 @@ def run_benchmark(client: QdrantClient) -> None:
 
 
 if __name__ == "__main__":
-    client = QdrantClient(url=QDRANT_URL)
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--url",
+        default=QDRANT_URL,
+        help="Qdrant URL.",
+    )
+    args = parser.parse_args()
+    client = QdrantClient(url=args.url)
     run_benchmark(client)
