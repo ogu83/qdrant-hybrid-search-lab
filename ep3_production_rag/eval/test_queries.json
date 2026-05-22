@@ -1,52 +1,52 @@
 [
   {
-    "query": "iPhone 15 Pro 256GB titanium",
-    "relevant_ids": [1, 2, 3],
-    "category": "smartphones"
+    "query": "Samsung Galaxy S24 256GB",
+    "relevant_ids": [16],
+    "category": "smartphone"
   },
   {
     "query": "noise cancelling wireless headphones for commuting",
-    "relevant_ids": [101, 102, 103],
+    "relevant_ids": [10],
     "category": "headphones"
   },
   {
     "query": "MacBook Pro M3 laptop for video editing",
-    "relevant_ids": [201, 202, 203],
-    "category": "laptops"
+    "relevant_ids": [0],
+    "category": "laptop"
   },
   {
     "query": "portable SSD 1TB fast transfer",
-    "relevant_ids": [301, 302, 303],
+    "relevant_ids": [11, 15],
     "category": "storage"
   },
   {
     "query": "4K OLED TV 55 inch smart",
-    "relevant_ids": [401, 402, 403],
-    "category": "tvs"
+    "relevant_ids": [13],
+    "category": "tv"
   },
   {
     "query": "Samsung Galaxy S24 Ultra camera specs",
-    "relevant_ids": [4, 5, 6],
-    "category": "smartphones"
+    "relevant_ids": [37],
+    "category": "smartphone"
   },
   {
-    "query": "gaming laptop RTX 4090 high refresh rate display",
-    "relevant_ids": [204, 205, 206],
-    "category": "laptops"
+    "query": "ThinkPad X1 Carbon 16GB 512GB business laptop",
+    "relevant_ids": [7],
+    "category": "laptop"
   },
   {
     "query": "iPad Pro M4 drawing tablet stylus",
-    "relevant_ids": [501, 502, 503],
-    "category": "tablets"
+    "relevant_ids": [14, 19],
+    "category": "tablet"
   },
   {
-    "query": "Apple Watch Series 9 health tracking",
-    "relevant_ids": [601, 602, 603],
-    "category": "smartwatches"
+    "query": "Apple Watch Ultra health tracking",
+    "relevant_ids": [20],
+    "category": "smartwatch"
   },
   {
-    "query": "mechanical keyboard RGB backlit 60 percent",
-    "relevant_ids": [701, 702, 703],
-    "category": "peripherals"
+    "query": "MX Master 3S productivity mouse",
+    "relevant_ids": [21],
+    "category": "peripheral"
   }
 ]

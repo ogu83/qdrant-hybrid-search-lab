@@ -47,6 +47,13 @@ curl -X POST http://localhost:8000/search \
 py -3.11 -m ep3_production_rag.eval.benchmark
 ```
 
+Optional: auto-tune a stronger query set for live demo recording:
+
+```bash
+py -3.11 -m ep3_production_rag.eval.tune_queries --write
+py -3.11 -m ep3_production_rag.eval.benchmark --queries-file ep3_production_rag/eval/test_queries_tuned.json
+```
+
 Expected results:
 
 | Metric | Dense | Hybrid | Hybrid+Rerank |

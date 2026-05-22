@@ -14,26 +14,41 @@ class RetrievalPipeline:
     def search(
         self,
         query: str,
-        filters: dict[str, str] = {},
+        filters: dict[str, str] | None = None,
         top_k: int = 5,
         prefetch_k: int = 20,
     ) -> SearchResponse:
         fallback = "none"
+        active_filters = filters or {}
 
         candidates, retrieval_ms = self.retriever.retrieve(
             query=query,
-            filters=filters,
+            filters=active_filters,
             top_k=prefetch_k,
         )
 
         if not candidates:
-            logger.warning("No candidates from retriever — returning empty response")
+            if active_filters:
+                logger.warning(
+                    "No candidates with filters=%s, retrying without filters",
+                    active_filters,
+                )
+                fallback = "retried_without_filters"
+                candidates, retry_ms = self.retriever.retrieve(
+                    query=query,
+                    filters={},
+                    top_k=prefetch_k,
+                )
+                retrieval_ms += retry_ms
+
+        if not candidates:
+            logger.warning("No candidates after fallback — returning empty response")
             return SearchResponse(
                 results=[],
                 retrieval_ms=retrieval_ms,
                 rerank_ms=0.0,
                 total_ms=retrieval_ms,
-                fallback="empty_retrieval",
+                fallback="no_results",
             )
 
         try:

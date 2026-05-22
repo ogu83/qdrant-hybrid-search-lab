@@ -39,7 +39,7 @@ class HybridRetriever:
     def retrieve(
         self,
         query: str,
-        filters: dict[str, str] = {},
+        filters: dict[str, str] | None = None,
         top_k: int = 20,
     ) -> tuple[list, float]:
         t0 = time.perf_counter()
@@ -52,7 +52,7 @@ class HybridRetriever:
             values=sparse_result.values.tolist(),
         )
 
-        qdrant_filter = self._build_filter(filters)
+        qdrant_filter = self._build_filter(filters or {})
 
         results = self.client.query_points(
             collection_name=COLLECTION_NAME,
@@ -61,7 +61,7 @@ class HybridRetriever:
                 Prefetch(query=sparse_vec, using="sparse", limit=PREFETCH_LIMIT),
             ],
             query=FusionQuery(fusion=Fusion.RRF),
-            filter=qdrant_filter,
+            query_filter=qdrant_filter,
             limit=top_k,
             with_payload=True,
         )

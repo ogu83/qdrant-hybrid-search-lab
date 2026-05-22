@@ -7,6 +7,18 @@ class Reranker:
     def __init__(self) -> None:
         self.model = CrossEncoder(RERANK_MODEL)
 
+    @staticmethod
+    def _candidate_text(payload: dict) -> str:
+        parts = [
+            payload.get("name", ""),
+            payload.get("sku", ""),
+            payload.get("category", ""),
+            payload.get("storage", ""),
+            payload.get("color", ""),
+            payload.get("description", ""),
+        ]
+        return " ".join(str(p).strip() for p in parts if str(p).strip())
+
     def rerank(
         self,
         query: str,
@@ -15,10 +27,7 @@ class Reranker:
     ) -> tuple[list[dict], float]:
         t0 = time.perf_counter()
 
-        texts = [
-            c.payload.get("name", "") + " " + c.payload.get("description", "")
-            for c in candidates
-        ]
+        texts = [self._candidate_text(c.payload) for c in candidates]
         pairs = [(query, text) for text in texts]
         scores = self.model.predict(pairs).tolist()
 

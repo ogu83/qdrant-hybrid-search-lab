@@ -1,0 +1,30 @@
+[
+  {
+    "query": "AirPods Pro (2nd Gen) Lightning HEA-0403",
+    "relevant_ids": [
+      403
+    ],
+    "category": "headphones"
+  },
+  {
+    "query": "ASUS ROG Zephyrus G14 32GB RAM 1TB RTX 4070 LAP-0434",
+    "relevant_ids": [
+      434
+    ],
+    "category": "laptop"
+  },
+  {
+    "query": "Samsung 990 Pro 1TB NVMe SSD STO-0370",
+    "relevant_ids": [
+      370
+    ],
+    "category": "storage"
+  },
+  {
+    "query": "Apple Magic Mouse PER-0160",
+    "relevant_ids": [
+      160
+    ],
+    "category": "peripheral"
+  }
+]
